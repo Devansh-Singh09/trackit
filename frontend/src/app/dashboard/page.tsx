@@ -65,7 +65,7 @@ export default function DashboardPage() {
     const fetchShipments = async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '3',
+        limit: '5',
         status: statusFilter,
         searchField: searchField,
         searchTerm: searchTerm,
