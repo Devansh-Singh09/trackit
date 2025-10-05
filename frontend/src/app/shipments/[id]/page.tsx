@@ -55,7 +55,7 @@ export default function ShipmentDetailPage() {
       const fetchShipment = async () => {
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch(`http://localhost:5000/api/shipments/${id}`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shipments/${id}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -91,7 +91,7 @@ export default function ShipmentDetailPage() {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/shipments/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shipments/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ export default function ShipmentDetailPage() {
       const token = localStorage.getItem('token');
 
       try {
-        const response = await fetch(`http://localhost:5000/api/shipments/${id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shipments/${id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -141,7 +141,7 @@ export default function ShipmentDetailPage() {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/shipments/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shipments/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

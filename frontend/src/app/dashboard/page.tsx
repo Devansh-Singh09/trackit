@@ -70,7 +70,7 @@ export default function DashboardPage() {
       });
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`http://localhost:5000/api/shipments?${params.toString()}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shipments?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -115,7 +115,7 @@ export default function DashboardPage() {
 
     const token = localStorage.getItem('token');
 
-    const response = await fetch('http://localhost:5000/api/shipments', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shipments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -146,7 +146,7 @@ export default function DashboardPage() {
       const token = localStorage.getItem('token');
 
       try {
-        const response = await fetch(`http://localhost:5000/api/shipments/${shipmentId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shipments/${shipmentId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
