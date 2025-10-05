@@ -15,6 +15,7 @@ export const createShipment = async (req, res) => {
     }
 
     const newShipment = new Shipment({
+      user: req.user.id,
       title,
       status,
       weight,
@@ -39,7 +40,7 @@ export const getAllShipments = async (req, res) => {
   try {
     const { page = 1, limit = 5, status, search, sort } = req.query;
 
-    const query = {};
+    const query = { user: req.user.id };
 
     if (status) {
       query.status = status;

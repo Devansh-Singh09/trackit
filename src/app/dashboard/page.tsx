@@ -40,7 +40,13 @@ export default function DashboardPage() {
         search: searchTerm,
         sort: sortBy,
       });
-      const response = await fetch(`http://localhost:5000/api/shipments?${params.toString()}`);
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`http://localhost:5000/api/shipments?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (response.ok) {
         const { data, metadata } = await response.json();
         setShipments(data);
@@ -51,13 +57,8 @@ export default function DashboardPage() {
   }, [currentPage, statusFilter, searchTerm, sortBy]);
 
   const handleLogout = async () => {
-    const response = await fetch('http://localhost:5000/api/users/logout', {
-      method: 'POST',
-    });
-
-    if (response.ok) {
-      router.push('/login');
-    }
+    localStorage.removeItem('token');
+    router.push('/login');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -89,10 +90,13 @@ export default function DashboardPage() {
     };
     
 
+    const token = localStorage.getItem('token');
+
     const response = await fetch('http://localhost:5000/api/shipments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(shipmentData),
     });
