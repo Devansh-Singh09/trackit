@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface Shipment {
   _id: string;
@@ -23,14 +24,31 @@ export default function DashboardPage() {
     distance: '' as number | string,
     isInsured: false,
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('');
 
   // Fetch shipments from the backend
   useEffect(() => {
     const fetchShipments = async () => {
-      // I will implement the GET endpoint later
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '5',
+        status: statusFilter,
+        search: searchTerm,
+        sort: sortBy,
+      });
+      const response = await fetch(`http://localhost:5000/api/shipments?${params.toString()}`);
+      if (response.ok) {
+        const { data, metadata } = await response.json();
+        setShipments(data);
+        setTotalPages(metadata.totalPages);
+      }
     };
-    // fetchShipments();
-  }, []);
+    fetchShipments();
+  }, [currentPage, statusFilter, searchTerm, sortBy]);
 
   const handleLogout = async () => {
     const response = await fetch('http://localhost:5000/api/users/logout', {
@@ -69,6 +87,7 @@ export default function DashboardPage() {
       weight: parseFloat(formState.weight as string),
       distance: parseFloat(formState.distance as string),
     };
+    
 
     const response = await fetch('http://localhost:5000/api/shipments', {
       method: 'POST',
@@ -81,6 +100,7 @@ export default function DashboardPage() {
     if (response.ok) {
       const { data: newShipment } = await response.json();
       setShipments([...shipments, newShipment]);
+      alert(`Shipment created successfully!\nYour Shipment ID is: ${newShipment._id}`);
       setFormState({
         title: '',
         status: 'Pending',
@@ -114,8 +134,8 @@ export default function DashboardPage() {
           <form onSubmit={handleCreateShipment} className="p-8 bg-white rounded-lg shadow-md">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <input type="text" name="title" value={formState.title} onChange={handleInputChange} placeholder="Title" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" required />
-              <input type="number" name="weight" value={formState.weight} onChange={handleInputChange} placeholder="Weight" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required />
-              <input type="number" name="distance" value={formState.distance} onChange={handleInputChange} placeholder="Distance" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required />
+              <input type="number" name="weight" value={formState.weight} onChange={handleInputChange} placeholder="Weight (kg)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required />
+              <input type="number" name="distance" value={formState.distance} onChange={handleInputChange} placeholder="Distance (km)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required />
               <select name="status" value={formState.status} onChange={handleInputChange} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md">
                 <option value="Pending">Pending</option>
                 <option value="In Transit">In Transit</option>
@@ -132,15 +152,40 @@ export default function DashboardPage() {
 
         <div className="mt-8">
           <h3 className="text-xl font-bold text-gray-800">Your Shipments</h3>
+
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+            <input type="text" placeholder="Search by title..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md">
+              <option value="">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="In Transit">In Transit</option>
+              <option value="Delivered">Delivered</option>
+            </select>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md">
+              <option value="">Sort By</option>
+              <option value="title">Title</option>
+              <option value="shippingCost">Shipping Cost</option>
+            </select>
+          </div>
+
           <ul className="mt-4 space-y-4">
             {shipments.map((shipment) => (
-              <li key={shipment._id} className="p-4 bg-white rounded-lg shadow-md">
-                <p><strong>Title:</strong> {shipment.title}</p>
-                <p><strong>Status:</strong> {shipment.status}</p>
-                <p><strong>Shipping Cost:</strong> ${shipment.shippingCost}</p>
+              <li key={shipment._id}>
+                <Link href={`/shipments/${shipment._id}`} className="block p-4 bg-white rounded-lg shadow-md hover:bg-gray-50">
+                  <p><strong>Title:</strong> {shipment.title}</p>
+                  <p><strong>Status:</strong> {shipment.status}</p>
+                  <p><strong>Shipping Cost:</strong> ${shipment.shippingCost}</p>
+                  <p><strong>ID:</strong> {shipment._id}</p>
+                </Link>
               </li>
             ))}
           </ul>
+
+          <div className="mt-6 flex justify-between items-center">
+            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2 font-medium text-white bg-indigo-600 rounded-md disabled:bg-gray-400">Previous</button>
+            <span>Page {currentPage} of {totalPages}</span>
+            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="px-4 py-2 font-medium text-white bg-indigo-600 rounded-md disabled:bg-gray-400">Next</button>
+          </div>
         </div>
       </main>
     </div>
