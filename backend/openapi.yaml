@@ -1,0 +1,262 @@
+
+openapi: 3.1.0
+info:
+  title: Trackit API
+  version: 1.0.0
+  description: API for managing shipments in the Trackit application.
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+components:
+  schemas:
+    Shipment:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: The unique identifier for the shipment.
+          example: 60d5f2b4a1b2c3d4e5f6g7h8
+        user:
+          type: string
+          description: The ID of the user who created the shipment.
+          example: 60d5f2b4a1b2c3d4e5f6g7h9
+        title:
+          type: string
+          description: The title of the shipment.
+          example: My First Shipment
+        status:
+          type: string
+          description: The status of the shipment.
+          enum: [Pending, In Transit, Delivered]
+          example: Pending
+        isInsured:
+          type: boolean
+          description: Whether the shipment is insured.
+          example: false
+        weight:
+          type: number
+          description: The weight of the shipment in kg.
+          example: 10
+        distance:
+          type: number
+          description: The distance for the shipment in km.
+          example: 100
+        shippingCost:
+          type: number
+          description: The calculated shipping cost.
+          example: 500
+      required:
+        - title
+        - weight
+        - distance
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /api/shipments:
+    get:
+      summary: Get all shipments
+      description: Retrieve a paginated list of shipments for the logged-in user. Supports filtering, searching, and sorting.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: The page number for pagination.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 5
+          description: The number of items per page.
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [Pending, In Transit, Delivered]
+          description: Filter shipments by status.
+        - in: query
+          name: searchField
+          schema:
+            type: string
+            enum: [_id, title]
+          description: The field to search by.
+        - in: query
+          name: searchTerm
+          schema:
+            type: string
+          description: The term to search for.
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [title, shippingCost]
+          description: The field to sort by.
+      responses:
+        '200':
+          description: A list of shipments.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Shipment'
+                  metadata:
+                    type: object
+                    properties:
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+                      currentPage:
+                        type: integer
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Not authorized, no token
+
+    post:
+      summary: Create a new shipment
+      description: Create a new shipment for the logged-in user.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Shipment'
+            examples:
+              success:
+                summary: A successful request
+                value:
+                  title: New Shipment
+                  weight: 20
+                  distance: 50
+              validation_error:
+                summary: A request with missing fields
+                value:
+                  weight: 20
+      responses:
+        '201':
+          description: Shipment created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+        '400':
+          description: Bad request (e.g., missing fields).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Title, weight, and distance are required
+        '401':
+          description: Unauthorized.
+
+  /api/shipments/{id}:
+    get:
+      summary: Get a shipment by ID
+      description: Retrieve a single shipment by its ID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the shipment to retrieve.
+      responses:
+        '200':
+          description: The requested shipment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Shipment not found.
+
+    put:
+      summary: Update a shipment
+      description: Update an existing shipment.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the shipment to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Shipment'
+            example:
+              status: In Transit
+      responses:
+        '200':
+          description: Shipment updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Shipment not found.
+
+    delete:
+      summary: Delete a shipment
+      description: Delete an existing shipment.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the shipment to delete.
+      responses:
+        '200':
+          description: Shipment deleted successfully.
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Shipment not found.

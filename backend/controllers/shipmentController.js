@@ -38,7 +38,8 @@ export const createShipment = async (req, res) => {
 
 export const getAllShipments = async (req, res) => {
   try {
-    const { page = 1, limit = 5, status, search, sort } = req.query;
+    const { page = 1, limit = 5, status, searchField, searchTerm, sort } = req.query;
+    console.log('Search params:', { searchField, searchTerm });
 
     const query = { user: req.user.id };
 
@@ -46,16 +47,17 @@ export const getAllShipments = async (req, res) => {
       query.status = status;
     }
 
-    if (search) {
-      if (isValidObjectId(search)) {
-        query.$or = [
-          { title: { $regex: search, $options: 'i' } },
-          { _id: search },
-        ];
-      } else {
-        query.title = { $regex: search, $options: 'i' }; // Case-insensitive search
+    if (searchField && searchTerm) {
+      if (searchField === '_id') {
+        if (isValidObjectId(searchTerm)) {
+          query._id = searchTerm;
+        }
+      } else if (searchField === 'title') {
+        query.title = { $regex: searchTerm, $options: 'i' };
       }
     }
+
+    console.log('Executing query:', query);
 
     const sortOptions = {};
     if (sort) {
@@ -96,5 +98,58 @@ export const getShipmentById = async (req, res) => {
     res.status(200).json({ success: true, data: shipment });
   } catch (error) {
     res.status(500).json({ success: false, message: 'An error occurred while fetching the shipment', error: error.message });
+  }
+};
+
+export const updateShipment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, status, isInsured, weight, distance } = req.body;
+
+    const shipment = await Shipment.findById(id);
+
+    if (!shipment) {
+      return res.status(404).json({ success: false, message: 'Shipment not found' });
+    }
+
+    // Check if the logged-in user is the owner of the shipment
+    if (shipment.user.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, message: 'Not authorized to update this shipment' });
+    }
+
+    shipment.title = title || shipment.title;
+    shipment.status = status || shipment.status;
+    shipment.isInsured = isInsured === undefined ? shipment.isInsured : isInsured;
+    shipment.weight = weight || shipment.weight;
+    shipment.distance = distance || shipment.distance;
+
+    const updatedShipment = await shipment.save();
+
+    res.status(200).json({ success: true, data: updatedShipment });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'An error occurred while updating the shipment', error: error.message });
+  }
+};
+
+export const deleteShipment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const shipment = await Shipment.findById(id);
+
+    if (!shipment) {
+      return res.status(404).json({ success: false, message: 'Shipment not found' });
+    }
+
+    // Check if the logged-in user is the owner of the shipment
+    if (shipment.user.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, message: 'Not authorized to delete this shipment' });
+    }
+
+    await Shipment.findByIdAndDelete(id);
+
+    res.status(200).json({ success: true, message: 'Shipment deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'An error occurred while deleting the shipment', error: error.message });
   }
 };

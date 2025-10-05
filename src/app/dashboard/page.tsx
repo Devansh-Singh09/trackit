@@ -14,6 +14,8 @@ interface Shipment {
   shippingCost: number;
 }
 
+import Navbar from '../../components/Navbar';
+
 export default function DashboardPage() {
   const router = useRouter();
   const [shipments, setShipments] = useState<Shipment[]>([]);
@@ -28,6 +30,7 @@ export default function DashboardPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchField, setSearchField] = useState('_id');
   const [sortBy, setSortBy] = useState('');
 
   // Fetch shipments from the backend
@@ -37,7 +40,8 @@ export default function DashboardPage() {
         page: currentPage.toString(),
         limit: '5',
         status: statusFilter,
-        search: searchTerm,
+        searchField: searchField,
+        searchTerm: searchTerm,
         sort: sortBy,
       });
       const token = localStorage.getItem('token');
@@ -55,11 +59,6 @@ export default function DashboardPage() {
     };
     fetchShipments();
   }, [currentPage, statusFilter, searchTerm, sortBy]);
-
-  const handleLogout = async () => {
-    localStorage.removeItem('token');
-    router.push('/login');
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -118,19 +117,33 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteShipment = async (shipmentId: string) => {
+    if (window.confirm('Are you sure you want to delete this shipment?')) {
+      const token = localStorage.getItem('token');
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/shipments/${shipmentId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          setShipments(shipments.filter(shipment => shipment._id !== shipmentId));
+        } else {
+          const errorData = await response.json();
+          alert(`Error deleting shipment: ${errorData.message}`);
+        }
+      } catch (err) {
+        alert('An error occurred while deleting the shipment');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-800">Trackit</h1>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Logout
-          </button>
-        </nav>
-      </header>
+      <Navbar />
       <main className="container mx-auto px-6 py-8">
         <h2 className="text-2xl font-bold text-gray-800">Create a new Shipment</h2>
 
@@ -158,7 +171,11 @@ export default function DashboardPage() {
           <h3 className="text-xl font-bold text-gray-800">Your Shipments</h3>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-            <input type="text" placeholder="Search by title..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" />
+            <select value={searchField} onChange={(e) => setSearchField(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md">
+              <option value="_id">ID</option>
+              <option value="title">Title</option>
+            </select>
+            <input type="text" placeholder="Search by ID or Title..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md md:col-span-1" />
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md">
               <option value="">All Statuses</option>
               <option value="Pending">Pending</option>
@@ -174,13 +191,21 @@ export default function DashboardPage() {
 
           <ul className="mt-4 space-y-4">
             {shipments.map((shipment) => (
-              <li key={shipment._id}>
-                <Link href={`/shipments/${shipment._id}`} className="block p-4 bg-white rounded-lg shadow-md hover:bg-gray-50">
-                  <p><strong>Title:</strong> {shipment.title}</p>
-                  <p><strong>Status:</strong> {shipment.status}</p>
-                  <p><strong>Shipping Cost:</strong> ${shipment.shippingCost}</p>
-                  <p><strong>ID:</strong> {shipment._id}</p>
-                </Link>
+              <li key={shipment._id} className="p-4 bg-white rounded-lg shadow-md">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <Link href={`/shipments/${shipment._id}`} className="text-lg font-bold text-indigo-600 hover:underline">
+                      {shipment.title}
+                    </Link>
+                    <p><strong>Status:</strong> {shipment.status}</p>
+                    <p><strong>Shipping Cost:</strong> ${shipment.shippingCost}</p>
+                    <p className="text-sm text-gray-500"><strong>ID:</strong> {shipment._id}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Link href={`/shipments/${shipment._id}`} className="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Edit</Link>
+                    <button onClick={() => handleDeleteShipment(shipment._id)} className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">Delete</button>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>
