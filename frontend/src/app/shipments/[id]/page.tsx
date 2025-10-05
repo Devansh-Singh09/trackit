@@ -12,6 +12,8 @@ interface Shipment {
   weight: number;
   distance: number;
   shippingCost: number;
+  origin: string;
+  destination: string;
 }
 
 
@@ -183,8 +185,10 @@ export default function ShipmentDetailPage() {
           <div className="space-y-2">
             <p><strong>Status:</strong> {shipment.status}</p>
             <p><strong>Weight:</strong> {shipment.weight} kg</p>
+            <p><strong>Origin:</strong> {shipment.origin}</p>
+            <p><strong>Destination:</strong> {shipment.destination}</p>
             <p><strong>Distance:</strong> {shipment.distance} km</p>
-            <p><strong>Shipping Cost:</strong> ${shipment.shippingCost}</p>
+            <p><strong>Shipping Cost:</strong> ₹{shipment.shippingCost}</p>
             <p><strong>Insured:</strong> {shipment.isInsured ? 'Yes' : 'No'}</p>
           </div>
 
@@ -203,3 +207,4 @@ export default function ShipmentDetailPage() {
     </div>
   );
 }
+import React from 'react';

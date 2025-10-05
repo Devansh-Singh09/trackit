@@ -24,6 +24,14 @@ const shipmentSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  origin: {
+    type: String,
+    required: true,
+  },
+  destination: {
+    type: String,
+    required: true,
+  },
   distance: {
     type: Number,
     required: true,
@@ -35,7 +43,7 @@ const shipmentSchema = new mongoose.Schema({
 
 // Pre-save middleware to calculate shippingCost
 shipmentSchema.pre('save', function (next) {
-  this.shippingCost = this.weight * this.distance * 0.5;
+  this.shippingCost = this.weight * this.distance * 1.5;
   next();
 });
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -36,6 +37,8 @@ export default function DashboardPage() {
     weight: '' as number | string,
     distance: '' as number | string,
     isInsured: false,
+    origin: '',
+    destination: '',
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -109,7 +112,7 @@ export default function DashboardPage() {
     const shipmentData = {
       ...formState,
       weight: parseFloat(formState.weight as string),
-      distance: parseFloat(formState.distance as string),
+      // distance will be calculated by backend
     };
     
 
@@ -134,6 +137,8 @@ export default function DashboardPage() {
         weight: '',
         distance: '',
         isInsured: false,
+        origin: '',
+        destination: '',
       });
     } else {
       const errorData = await response.json();
@@ -178,7 +183,11 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <input type="text" name="title" value={formState.title} onChange={handleInputChange} placeholder="Title" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" required />
                 <input type="number" name="weight" value={formState.weight} onChange={handleInputChange} placeholder="Weight (kg)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required />
-                <input type="number" name="distance" value={formState.distance} onChange={handleInputChange} placeholder="Distance (km)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required />
+                {/* New fields for origin and destination */}
+                <input type="text" name="origin" value={formState.origin} onChange={handleInputChange} placeholder="Origin (e.g. Washington, DC)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" required />
+                <input type="text" name="destination" value={formState.destination} onChange={handleInputChange} placeholder="Destination (e.g. New York City, NY)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" required />
+                {/* Distance field is now auto-calculated, so hide it */}
+                {/* <input type="number" name="distance" value={formState.distance} onChange={handleInputChange} placeholder="Distance (km)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required /> */}
                 <div className="flex items-center">
                   <input type="checkbox" name="isInsured" checked={formState.isInsured} onChange={handleInputChange} className="mr-2" />
                   <label htmlFor="isInsured">Is Insured?</label>
@@ -220,7 +229,7 @@ export default function DashboardPage() {
                       {shipment.title}
                     </Link>
                     <p><strong>Status:</strong> {shipment.status}</p>
-                    <p><strong>Shipping Cost:</strong> ${shipment.shippingCost}</p>
+                    <p><strong>Shipping Cost:</strong> ₹{shipment.shippingCost}</p>
                     <p className="text-sm text-gray-500"><strong>ID:</strong> {shipment._id}</p>
                   </div>
                   <div className="flex gap-2">
