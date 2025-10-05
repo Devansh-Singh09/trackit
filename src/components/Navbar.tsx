@@ -8,12 +8,14 @@ import { jwtDecode } from 'jwt-decode';
 interface DecodedToken {
   id: string;
   username: string;
+  role: string;
   exp: number;
 }
 
 export default function Navbar() {
   const router = useRouter();
   const [username, setUsername] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -21,6 +23,7 @@ export default function Navbar() {
       try {
         const decodedToken = jwtDecode<DecodedToken>(token);
         setUsername(decodedToken.username);
+        setRole(decodedToken.role);
       } catch (error) {
         console.error('Invalid token', error);
       }
@@ -37,7 +40,11 @@ export default function Navbar() {
       <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
         <h1 className="text-xl font-bold text-gray-800">Trackit</h1>
         <div className="flex items-center">
-          {username && <span className="text-gray-800 mr-4">Welcome, {username}</span>}
+          {username && (
+            <span className="text-gray-800 mr-4">
+              Welcome, {username} {role === 'admin' && '(Admin)'}
+            </span>
+          )}
           <button
             onClick={handleLogout}
             className="px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"

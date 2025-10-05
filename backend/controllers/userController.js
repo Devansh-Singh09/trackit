@@ -36,6 +36,13 @@ export const login = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Username and password are required' });
     }
 
+    // Check for admin login
+    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+      const token = jwt.sign({ id: 'admin', username: 'admin', role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      return res.status(200).json({ success: true, message: 'Admin login successful', token });
+    }
+
+    // Normal user login
     const user = await User.findOne({ username });
 
     if (!user) {
@@ -48,7 +55,7 @@ export const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid username or password' });
     }
 
-    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user._id, username: user.username, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.status(200).json({ success: true, message: 'Login successful', token });
   } catch (error) {

@@ -5,7 +5,11 @@ import { isValidObjectId } from 'mongoose';
 export const createShipment = async (req, res) => {
   console.log('Create shipment controller called');
   try {
-    const { title, status, weight, distance, isInsured } = req.body;
+    if (req.user.role === 'admin') {
+      return res.status(403).json({ success: false, message: 'Admins are not allowed to create shipments' });
+    }
+
+    const { title, weight, distance, isInsured } = req.body;
     console.log('Request body:', req.body);
 
     // Basic validation
@@ -17,7 +21,7 @@ export const createShipment = async (req, res) => {
     const newShipment = new Shipment({
       user: req.user.id,
       title,
-      status,
+      status: 'Pending', // Force status to Pending for new shipments
       weight,
       distance,
       isInsured,
@@ -41,7 +45,10 @@ export const getAllShipments = async (req, res) => {
     const { page = 1, limit = 5, status, searchField, searchTerm, sort } = req.query;
     console.log('Search params:', { searchField, searchTerm });
 
-    const query = { user: req.user.id };
+    let query = {};
+    if (req.user.role !== 'admin') {
+      query.user = req.user.id;
+    }
 
     if (status) {
       query.status = status;
@@ -104,7 +111,7 @@ export const getShipmentById = async (req, res) => {
 export const updateShipment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, status, isInsured, weight, distance } = req.body;
+    const { status } = req.body;
 
     const shipment = await Shipment.findById(id);
 
@@ -112,16 +119,23 @@ export const updateShipment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Shipment not found' });
     }
 
-    // Check if the logged-in user is the owner of the shipment
-    if (shipment.user.toString() !== req.user.id) {
-      return res.status(401).json({ success: false, message: 'Not authorized to update this shipment' });
+    if (req.user.role === 'admin') {
+      // Admin can only update status
+      if (status) {
+        const currentStatus = shipment.status;
+        if (
+          (currentStatus === 'Pending' && status === 'In Transit') ||
+          (currentStatus === 'In Transit' && status === 'Delivered')
+        ) {
+          shipment.status = status;
+        } else {
+          return res.status(400).json({ success: false, message: `Invalid status transition from ${currentStatus} to ${status}` });
+        }
+      }
+    } else {
+      // Non-admins are not allowed to update shipments
+      return res.status(403).json({ success: false, message: 'Not authorized to update this shipment' });
     }
-
-    shipment.title = title || shipment.title;
-    shipment.status = status || shipment.status;
-    shipment.isInsured = isInsured === undefined ? shipment.isInsured : isInsured;
-    shipment.weight = weight || shipment.weight;
-    shipment.distance = distance || shipment.distance;
 
     const updatedShipment = await shipment.save();
 
@@ -141,9 +155,8 @@ export const deleteShipment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Shipment not found' });
     }
 
-    // Check if the logged-in user is the owner of the shipment
-    if (shipment.user.toString() !== req.user.id) {
-      return res.status(401).json({ success: false, message: 'Not authorized to delete this shipment' });
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this shipment' });
     }
 
     await Shipment.findByIdAndDelete(id);

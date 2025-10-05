@@ -16,6 +16,17 @@ interface Shipment {
 
 import Navbar from '../../components/Navbar';
 
+
+
+import { jwtDecode } from 'jwt-decode';
+
+interface DecodedToken {
+  id: string;
+  username: string;
+  role: string;
+  exp: number;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [shipments, setShipments] = useState<Shipment[]>([]);
@@ -32,13 +43,26 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchField, setSearchField] = useState('_id');
   const [sortBy, setSortBy] = useState('');
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decodedToken = jwtDecode<DecodedToken>(token);
+        setUserRole(decodedToken.role);
+      } catch (error) {
+        console.error('Invalid token', error);
+      }
+    }
+  }, []);
 
   // Fetch shipments from the backend
   useEffect(() => {
     const fetchShipments = async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '5',
+        limit: '3',
         status: statusFilter,
         searchField: searchField,
         searchTerm: searchTerm,
@@ -58,7 +82,7 @@ export default function DashboardPage() {
       }
     };
     fetchShipments();
-  }, [currentPage, statusFilter, searchTerm, sortBy]);
+  }, [currentPage, statusFilter, searchTerm, searchField, sortBy]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -145,37 +169,35 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-100">
       <Navbar />
       <main className="container mx-auto px-6 py-8">
-        <h2 className="text-2xl font-bold text-gray-800">Create a new Shipment</h2>
+        <h2 className="text-2xl font-bold text-gray-800">{userRole === 'admin' ? 'Admin Dashboard' : 'Your Dashboard'}</h2>
 
-        <div className="mt-8">
-          <form onSubmit={handleCreateShipment} className="p-8 bg-white rounded-lg shadow-md">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input type="text" name="title" value={formState.title} onChange={handleInputChange} placeholder="Title" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" required />
-              <input type="number" name="weight" value={formState.weight} onChange={handleInputChange} placeholder="Weight (kg)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required />
-              <input type="number" name="distance" value={formState.distance} onChange={handleInputChange} placeholder="Distance (km)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required />
-              <select name="status" value={formState.status} onChange={handleInputChange} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md">
-                <option value="Pending">Pending</option>
-                <option value="In Transit">In Transit</option>
-                <option value="Delivered">Delivered</option>
-              </select>
-              <div className="flex items-center">
-                <input type="checkbox" name="isInsured" checked={formState.isInsured} onChange={handleInputChange} className="mr-2" />
-                <label htmlFor="isInsured">Is Insured?</label>
+        {userRole === 'user' && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-gray-800">Create a new Shipment</h2>
+            <form onSubmit={handleCreateShipment} className="p-8 bg-white rounded-lg shadow-md">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input type="text" name="title" value={formState.title} onChange={handleInputChange} placeholder="Title" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" required />
+                <input type="number" name="weight" value={formState.weight} onChange={handleInputChange} placeholder="Weight (kg)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required />
+                <input type="number" name="distance" value={formState.distance} onChange={handleInputChange} placeholder="Distance (km)" className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md" min="0" required />
+                <div className="flex items-center">
+                  <input type="checkbox" name="isInsured" checked={formState.isInsured} onChange={handleInputChange} className="mr-2" />
+                  <label htmlFor="isInsured">Is Insured?</label>
+                </div>
               </div>
-            </div>
-            <button type="submit" className="mt-6 w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Create Shipment</button>
-          </form>
-        </div>
+              <button type="submit" className="mt-6 w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Create Shipment</button>
+            </form>
+          </div>
+        )}
 
         <div className="mt-8">
-          <h3 className="text-xl font-bold text-gray-800">Your Shipments</h3>
+          <h3 className="text-xl font-bold text-gray-800">{userRole === 'admin' ? 'All Shipments' : 'Your Shipments'}</h3>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
             <select value={searchField} onChange={(e) => setSearchField(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md">
               <option value="_id">ID</option>
               <option value="title">Title</option>
             </select>
-            <input type="text" placeholder="Search by ID or Title..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md md:col-span-1" />
+            <input type="text" placeholder="Search by..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md md:col-span-1" />
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full px-3 py-2 text-gray-900 bg-gray-200 border border-gray-300 rounded-md">
               <option value="">All Statuses</option>
               <option value="Pending">Pending</option>
@@ -202,8 +224,15 @@ export default function DashboardPage() {
                     <p className="text-sm text-gray-500"><strong>ID:</strong> {shipment._id}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Link href={`/shipments/${shipment._id}`} className="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Edit</Link>
-                    <button onClick={() => handleDeleteShipment(shipment._id)} className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">Delete</button>
+                    {userRole === 'admin' && (
+                      <>
+                        <Link href={`/shipments/${shipment._id}`} className="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Edit</Link>
+                        <button onClick={() => handleDeleteShipment(shipment._id)} className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">Delete</button>
+                      </>
+                    )}
+                    {userRole === 'user' && (
+                      <Link href={`/shipments/${shipment._id}`} className="px-3 py-1 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700">View</Link>
+                    )}
                   </div>
                 </div>
               </li>
