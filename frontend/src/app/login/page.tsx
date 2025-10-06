@@ -81,6 +81,12 @@ export default function LoginPage() {
             Sign Up
           </Link>
         </p>
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-800 text-center">
+            <strong>Admin Username:</strong> admin@gmail.com <br />
+            <strong>Admin Password:</strong> admin1234
+          </p>
+        </div>
       </div>
     </div>
   );
