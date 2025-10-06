@@ -37,7 +37,7 @@ TrackIt is a full-stack shipment tracking system that allows users to create and
 | **Backend** | Node.js + Express |
 | **Database** | MongoDB + Mongoose |
 | **Authentication** | JWT (JSON Web Token) |
-| **Deployment** | Frontend on Vercel, Backend on Render |
+| **Deployment** | Frontend & Backend both deployed on Render |
 | **API Testing** | Postman (with generated collection) |
 
 ---
